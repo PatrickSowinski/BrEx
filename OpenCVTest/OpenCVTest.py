@@ -35,6 +35,14 @@ while(cap.isOpened()):
     img = cv2.polylines(frame, [polygon], True, (255, 0, 0), 3)
     cv2.imshow('polygon', frame)
 
+    # get corner points
+    poly_squeezed = np.squeeze(polygon)
+    xCoords = [point[0] for point in poly_squeezed]
+    yCoords = [point[1] for point in poly_squeezed]
+    #print(xCoords)
+    #print(yCoords)
+    
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
