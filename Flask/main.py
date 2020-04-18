@@ -14,9 +14,11 @@
 # 2. Run "python main.py".
 # 3. Navigate the browser to the local webpage.
 from flask import Flask, render_template, Response
+from flask_cors import CORS
 from camera import VideoCamera
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def index():
@@ -34,4 +36,4 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='localhost', debug=True)
