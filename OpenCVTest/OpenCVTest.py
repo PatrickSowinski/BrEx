@@ -17,6 +17,8 @@ frameCount = 0
 # initialize variables for chest and stomach positions
 chestMeansArray = []
 stomachMeansArray = []
+chestDiffArray = []
+stomachDiffArray = []
 totalChestMean = 0.0
 totalStomachMean = 0.0
 
@@ -90,8 +92,8 @@ while(cap.isOpened()):
 
     # update mean of means with soft step (or just mean for first 100 frames)
     if frameCount < 100:
-        totalChestMean = int(np.mean(chestMeansArray))
-        totalStomachMean = int(np.mean(stomachMeansArray))
+        totalChestMean = np.mean(chestMeansArray)
+        totalStomachMean = np.mean(stomachMeansArray)
     else:
         updateFactor = 0.02
         totalChestMean = updateFactor * xChestMean + (1-updateFactor) * totalChestMean
@@ -114,30 +116,22 @@ while(cap.isOpened()):
     cv2.circle(overlay, (stomachCenter, int(3*imageHeight/4)), stomachRadius, (0, 255, 0), -1)
     frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
 
-    cv2.imshow('contours right half', frame)
+    # save diff of chest and stomach (= total mean - current)
+    chestDiff = totalChestMean - xChestMean
+    chestDiffArray.append(chestDiff)
+    stomachDiff = totalStomachMean - xStomachMean
+    stomachDiffArray.append(stomachDiff)
 
-    """
-    # find polygon around largest contour
-    epsilon = 0.1*cv2.arcLength(largest_contour, True)
-    polygon = cv2.approxPolyDP(largest_contour, epsilon, True)
-    img = cv2.polylines(frame, [polygon], True, (255, 0, 0), 3)
-    cv2.imshow('polygon', frame)
-    """
-    """
-    # get corner points
-    poly_corners = np.squeeze(polygon)
-    xCoords = [point[0] for point in poly_corners]
-    yCoords = [point[1] for point in poly_corners]
-    # find out which points are bottom/top, left/right
-    # (0,0) is top_left, x grows to right, y grows to bottom
-    xSorted = np.argsort(xCoords)
-    left_points = poly_corners[xSorted[:2]]
-    right_points = poly_corners[xSorted[-2:]]
-    top_left = left_points[0]
-    bottom_left = left_points[1]
-    top_right = right_points[0]
-    bottom_right = right_points[1]
-    """
+    # check which part has a larger diff
+    # (average over last 20 frames)
+    chestDiffAvg = np.mean(chestDiffArray[-20:])
+    stomachDiffAvg = np.mean(stomachDiffArray[-20:])
+    breatheCorrect = (abs(stomachDiffAvg) > abs(chestDiffAvg))
+
+    if breatheCorrect:
+        cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
+
+    cv2.imshow('contours right half', frame)
 
     # close video with 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -147,14 +141,25 @@ cap.release()
 cv2.destroyAllWindows()
 print("Total frames:",frameCount)
 
-# plot means of chest and stomach position
+# PLOTS
 # create an array with frame numbers, since we skipped every 2nd one
 frameArray = 2*np.array(range(len(chestMeansArray)))
+# plot means of chest and stomach position
 chestPlot = plt.plot(frameArray, chestMeansArray, label="Chest")
 stomachPlot = plt.plot(frameArray, stomachMeansArray, label="Stomach")
+# clip ymax, because of stupid peaks
 _, _, ymin, ymax = plt.axis()
 plt.ylim([ymin, min(ymax, int(3*imageWidth/4))])
 plt.legend()
+plt.title("Current horizontal position")
+plt.ylabel("Horizontal position [pixels]")
+plt.xlabel("Frame")
+plt.show()
+# plot means of chest and stomach position
+chestPlot = plt.plot(frameArray, chestDiffArray, label="Chest")
+stomachPlot = plt.plot(frameArray, stomachDiffArray, label="Stomach")
+plt.legend()
+plt.title("Difference between current position and mean position")
 plt.ylabel("Horizontal position [pixels]")
 plt.xlabel("Frame")
 plt.show()
