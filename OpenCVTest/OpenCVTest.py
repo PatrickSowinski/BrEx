@@ -10,6 +10,9 @@ cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
 
 while(cap.isOpened()):
     ret, frame = cap.read()
+    # get dimensions
+    imageHeight, imageWidth = frame.shape[:2]
+    imageCenterY = imageHeight / 2
 
     # turn to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -42,9 +45,12 @@ while(cap.isOpened()):
     # remove top and bottom 20 pixels
     contourRight = np.array([point for point in contourRight if point[1] > yTop+20 and point[1] < yBottom - 20])
 
-    
+    # separate chest and stomach
+    contourChest = np.array([point for point in contourRight if point[1] <= imageCenterY])
+    contourStomach = np.array([point for point in contourRight if point[1] > imageCenterY])
 
-    img = cv2.drawContours(frame, [contourRight], -1, (0, 255, 0), 3)
+    img = cv2.polylines(frame, [contourChest], False, (255, 0, 0), 3)
+    img = cv2.polylines(frame, [contourStomach], False, (0, 255, 0), 3)
     cv2.imshow('contours right half', frame)
 
 
