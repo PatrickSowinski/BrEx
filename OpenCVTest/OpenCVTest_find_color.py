@@ -28,7 +28,7 @@ cap = cv2.VideoCapture(0)
 
 
 
-
+time.sleep(3)
 _, frame = cap.read()
 mask = np.zeros(frame.shape[:2],np.uint8)   # img.shape[:2] = (480, 640)
 
@@ -96,7 +96,8 @@ while(cap.isOpened()):
     if totalStomachMean == 0:
         totalStomachMean = 3*imageWidth/4
 
-    colormode = "RED"
+    colormode = "AUTO"
+    #colormode = "RED"
     #colormode = "GRAY"
     thresh = frame
 
@@ -121,8 +122,25 @@ while(cap.isOpened()):
         mask = mask0 + mask1
         thresh = cv2.bitwise_not(mask)
 
+    if colormode == "AUTO":
+        H = color[0]
+        print(color)
+        blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
+        hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+        # lower mask (0-10)
+        lower_red = np.array([int(H), 100, 50])
+        upper_red = np.array([int(H*1.10), 255, 255])
+        mask0 = cv2.inRange(hsv, lower_red, upper_red)
+        # upper mask (170-180)
+        lower_red = np.array([int(H*0.9), 100, 50])
+        upper_red = np.array([int(H), 255, 255])
+        mask1 = cv2.inRange(hsv, lower_red, upper_red)
+        # join my masks
+        mask = mask0 + mask1
+        thresh = cv2.bitwise_not(mask)
+
     # find contours from threshold
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
     # find largest contours
     areas = [cv2.contourArea(cnt) for cnt in contours]
