@@ -8,6 +8,10 @@ cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
 # open webcam directly
 #cap = cv2.VideoCapture(0)
 
+# save most right position of chest and stomach
+mostRightChest = -1
+mostRightStomach = -1
+
 while(cap.isOpened()):
     ret, frame = cap.read()
     # get dimensions
@@ -58,6 +62,15 @@ while(cap.isOpened()):
     xStomachMean = int(np.mean(xStomach))
     cv2.line(frame, (xChestMean, 20), (xChestMean, imageCenterY), (0, 0, 255), 2)
     cv2.line(frame, (xStomachMean, imageCenterY), (xStomachMean, imageHeight-20), (0, 0, 255), 2)
+
+    # draw circles for chest and stomach breathing
+    if xChestMean > mostRightChest:
+        mostRightChest = xChestMean
+    if xStomachMean > mostRightStomach:
+        mostRightStomach = xStomachMean
+    bodyCenter = np.max([mostRightChest, mostRightStomach]) + 100
+    cv2.circle(frame, (bodyCenter, int(imageHeight/4)), bodyCenter-xChestMean, (255, 0, 0), -1)
+    cv2.circle(frame, (bodyCenter, int(3*imageHeight/4)), bodyCenter - xStomachMean, (0, 255, 0), -1)
 
     cv2.imshow('contours right half', frame)
 
