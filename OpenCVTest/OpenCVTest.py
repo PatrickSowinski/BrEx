@@ -69,8 +69,12 @@ while(cap.isOpened()):
     if xStomachMean > mostRightStomach:
         mostRightStomach = xStomachMean
     bodyCenter = np.max([mostRightChest, mostRightStomach]) + 100
-    cv2.circle(frame, (bodyCenter, int(imageHeight/4)), bodyCenter-xChestMean, (255, 0, 0), -1)
-    cv2.circle(frame, (bodyCenter, int(3*imageHeight/4)), bodyCenter - xStomachMean, (0, 255, 0), -1)
+    # add overlay for transparency of circles
+    overlay = frame.copy()
+    alpha = 0.4
+    cv2.circle(overlay, (bodyCenter, int(imageHeight/4)), bodyCenter-xChestMean, (255, 0, 0), -1)
+    cv2.circle(overlay, (bodyCenter, int(3*imageHeight/4)), bodyCenter - xStomachMean, (0, 255, 0), -1)
+    frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
 
     cv2.imshow('contours right half', frame)
 
