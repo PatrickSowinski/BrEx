@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 # open video from file
-cap = cv2.VideoCapture("../videos/correct_short_1.mp4")
+cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
 # open webcam directly
 #cap = cv2.VideoCapture(0)
 
@@ -45,6 +45,7 @@ while(cap.isOpened()):
     if colormode == "GRAY":
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(gray, 75, 255, 0)
+        thresh = cv2.bitwise_not(thresh)
 
     # Alternative 2: find red body
     if colormode == "RED":
@@ -60,37 +61,42 @@ while(cap.isOpened()):
         mask1 = cv2.inRange(hsv, lower_red, upper_red)
         # join my masks
         mask = mask0 + mask1
-        thresh = cv2.bitwise_not(mask)
+        #thresh = cv2.bitwise_not(mask)
 
     # find contours from threshold
     image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #cv2.imshow("Threshold", thresh)
 
-    # find largest contours
+    # skip if no contours
+    if len(contours) < 1:
+        continue
+
+    # find largest contours (=body)
     areas = [cv2.contourArea(cnt) for cnt in contours]
     index_largest_area = np.argmax(areas)
     largest_contour = contours[index_largest_area]
+    #cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 3)
     #largest_3_indices = np.argsort(areas)[-3:]
     #second_contour = contours[largest_3_indices[1]]
     #third_contour = contours[largest_3_indices[0]]
-    #img = cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 3)
     #cv2.imshow('contours', frame)
 
-    # try to find the right part of the contour points and remove the rest
+    # try to find the chest+stomach part of the contour points and remove the rest
     contour_points = np.squeeze(largest_contour)
-    # find right half of points
+    # find left half of points
     xContour = contour_points[:, 0]
-    xMedian = np.median(xContour)
-    contourRight = np.array([point for point in contour_points if point[0] > xMedian])
+    xMean = np.mean(xContour)
+    contourLeft = np.array([point for point in contour_points if point[0] < xMean])
     # get top and bottom
-    yContour = contourRight[:, 1]
+    yContour = contourLeft[:, 1]
     yTop = np.min(yContour)
     yBottom = np.max(yContour)
     # remove top and bottom 20 pixels
-    contourRight = np.array([point for point in contourRight if point[1] > yTop+20 and point[1] < yBottom - 20])
+    contourLeft = np.array([point for point in contourLeft if point[1] > yTop+20 and point[1] < yBottom - 20])
 
     # separate chest and stomach
-    contourChest = np.array([point for point in contourRight if point[1] <= imageCenterY])
-    contourStomach = np.array([point for point in contourRight if point[1] > imageCenterY])
+    contourChest = np.array([point for point in contourLeft if point[1] <= imageCenterY])
+    contourStomach = np.array([point for point in contourLeft if point[1] > imageCenterY])
     cv2.polylines(frame, [contourChest], False, (255, 0, 0), 2)
     cv2.polylines(frame, [contourStomach], False, (0, 255, 0), 2)
 
@@ -149,7 +155,7 @@ while(cap.isOpened()):
             cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
 
     cv2.imshow('contours right half', frame)
-
+    
     # close video with 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
