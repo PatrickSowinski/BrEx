@@ -16,6 +16,7 @@
 from flask import Flask, render_template, Response
 from flask_cors import CORS
 from camera import VideoCamera
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -34,6 +35,14 @@ def gen(camera):
 def video_feed():
     return Response(gen(VideoCamera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/calculations')
+def getCalculations():
+	return {"calculations": VideoCamera().state}, 400
+
+@app.route('/success')
+def getSuccess():
+	return {"success": VideoCamera().contour_found}, 400
 
 if __name__ == '__main__':
     app.run(host='localhost', debug=True)

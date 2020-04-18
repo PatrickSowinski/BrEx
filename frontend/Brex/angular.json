@@ -120,6 +120,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "Brex"
+    }
+  },
+  "defaultProject": "Brex",
+  "cli": {
+    "analytics": "a87b1a37-c2c3-4030-b027-5859f8cdc843"
+  }
 }

@@ -1,0 +1,22 @@
+<div class="row vw-100">
+    <div class="mx-auto mt-5 mb-5">
+        <div *ngIf="cameraAllowed">
+            <div class="card">
+                <img id="bg" src="{{ baseUrl }}" height="650">
+                <span class="my-span-img float-left">
+                    <img src="../../assets/images/sideway-human.png" alt="empty">
+                </span>
+                <span *ngIf="!displayNextButton && !displayStartButton" class="my-span text-primary p-1">{{instructions[index]}}</span>
+                <span *ngIf="displayNextButton || displayStartButton" class="my-span text-primary p-1">{{earlyInstructions[earlyIndex]}}</span>
+            </div>
+            <div class="d-flex justify-content-center mt-2">
+                <button *ngIf="displayNextButton" class="btn btn-primary" (click)="nextClick()">Next</button>
+                <button *ngIf="displayStartButton" class="btn btn-primary" (click)="startExercise()">Start</button>
+                <button *ngIf="displayResultButton" class="btn btn-primary">Results</button>
+                <h1 id="countdown"></h1>
+            </div>
+        </div>
+
+    </div>
+</div>
+

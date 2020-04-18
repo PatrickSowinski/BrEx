@@ -8,11 +8,15 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import {VideoService} from './services/video.service';
 import { HomeComponent } from './home/home.component';
+import { ExerciseComponent } from './exercise/exercise.component';
+import { SolutionComponent } from './solution/solution.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    HomeComponent
+    HomeComponent,
+    ExerciseComponent,
+    SolutionComponent
   ],
   imports: [
     BrowserModule,

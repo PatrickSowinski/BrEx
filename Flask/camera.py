@@ -7,6 +7,18 @@ class VideoCamera(object):
         # from a webcam, comment the line below out and use a video file
         # instead.
         self.video = cv2.VideoCapture(0)
+        self.contour_found = False
+        self.state = ""
+
+        self.chestDiffArray = []
+        self.stomachDiffArray = []
+
+        self.frameCount = 0
+        # initialize variables for chest and stomach positions
+        self.chestMeansArray = []
+        self.stomachMeansArray = []
+        self.totalChestMean = 0.0
+        self.totalStomachMean = 0.0
         # If you decide to use video.mp4, you must have this file in the folder
         # as the main.py.
         # self.video = cv2.VideoCapture('video.mp4')
@@ -33,12 +45,11 @@ class VideoCamera(object):
             ret, jpeg = cv2.imencode('.jpg', frame)
             return jpeg.tobytes(),False,False
         self.frameCount += 1
-        """
+
         # skip every 2nd frame for performance reasons
-        if self.frameCount % 2 == 0:
-            ret, jpeg = cv2.imencode('.jpg', frame)
-            return jpeg.tobytes(),False,False
-        """
+        #if self.frameCount % 2 == 0:
+        #    ret, jpeg = cv2.imencode('.jpg', frame)
+        #    return jpeg.tobytes(),False,False
         # get dimensions
         imageHeight, imageWidth = frame.shape[:2]
         imageCenterY = int(imageHeight / 2)
@@ -72,6 +83,8 @@ class VideoCamera(object):
             # find contours from threshold
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
+        if (len(contours) > 0):
+            self.contour_found = True
         # skip if no contours
         if len(contours) < 1:
             ret, jpeg = cv2.imencode('.jpg', frame)
@@ -133,7 +146,7 @@ class VideoCamera(object):
             updateFactor = 0.02
             self.totalChestMean = updateFactor * xChestMean + (1-updateFactor) * self.totalChestMean
             self.totalStomachMean = updateFactor * xStomachMean + (1 - updateFactor) * self.totalStomachMean
-        cv2.line(frame, (int(self.totalChestMean), 20), (int(self.totalChestMean), imageCenterY), (0, 255, 255), 1)
+        cv2.line(frame, (int(self.totalChestMean), 20), (int(self.totalChestMean), imageCenterY), (0, 0, 255), 1)
         cv2.line(frame, (int(self.totalStomachMean), imageCenterY), (int(self.totalStomachMean), imageHeight - 20), (0, 0, 255), 1)
         # draw circles for chest and stomach breathing
         chestCenter = int(self.totalChestMean + 80)
@@ -152,10 +165,11 @@ class VideoCamera(object):
         cv2.circle(overlay, (chestCenter, int(imageHeight/4)), chestRadius, (255, 0, 0), -1)
         cv2.circle(overlay, (stomachCenter, int(3*imageHeight/4)), stomachRadius, (0, 255, 0), -1)
         frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
+
         # save diff of chest and stomach (= total mean - current)
-        chestDiff = self.totalChestMean - xChestMean
+        chestDiff = self.totalChestMean - xChestMean #if + inhale if - exhale
         self.chestDiffArray.append(chestDiff)
-        stomachDiff = self.totalStomachMean - xStomachMean
+        stomachDiff = self.totalStomachMean - xStomachMean #if + inhale if - exhale
         self.stomachDiffArray.append(stomachDiff)
 
         # check if diff is unusually large
@@ -167,13 +181,38 @@ class VideoCamera(object):
         # check which part has a larger diff
         # (average over last 20 frames)
         nFrames_diff = 20
+        print(len(self.chestDiffArray))
         if len(self.chestDiffArray) >= nFrames_diff:
-            chestDiffAvg = np.mean(self.chestDiffArray[-nFrames_diff:])
-            stomachDiffAvg = np.mean(self.stomachDiffArray[-nFrames_diff:])
-            breatheCorrect = (abs(stomachDiffAvg) > abs(chestDiffAvg))
-            if breatheCorrect:
-                cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
+            chestDiffAvg_mean_last3 = int(np.mean(self.chestDiffArray[-3:]))
+            chestDiffAvg_mean_first3 = int(np.mean(self.chestDiffArray[:3]))
+            stomachDiffAvg_mean_last3 = int(np.mean(self.stomachDiffArray[-3:]))
+            stomachDiffAvg_mean_first3 = int(np.mean(self.stomachDiffArray[:3]))
+            chest_expansion_rate = chestDiffAvg_mean_first3 - chestDiffAvg_mean_last3
+            stomach_expansion_rate = stomachDiffAvg_mean_first3 - stomachDiffAvg_mean_last3
 
+            print("Difference between chest and stomach expansion", (chest_expansion_rate - stomach_expansion_rate))
+            
+            if (chest_expansion_rate - stomach_expansion_rate) > 0:
+                if (chest_expansion_rate > 0):
+                    self.state = "lung_inhale"
+                    print("lung_inhale")
+                elif (chest_expansion_rate < 0):
+                    self.state = "lung_exhale"
+                    print("lung_exhale")
+                else:
+                    self.state = "hold_breath"
+                    #print("hold_breath")
+
+
+            if (stomach_expansion_rate < 0):
+                self.state = "belly_inhale"
+                print("belly_inhale")
+            elif (stomach_expansion_rate > 0):
+                self.state = "belly_exhale"
+                print("belly_exhale")
+            else:
+                self.state = "hold_breath"
+                #print("hold_breath")
 
         # close video with 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
