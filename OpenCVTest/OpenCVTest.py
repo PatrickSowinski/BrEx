@@ -1,6 +1,7 @@
 import time
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 import cv2
 
 # open video from file
@@ -21,6 +22,9 @@ totalStomachMean = 0.0
 
 while(cap.isOpened()):
     ret, frame = cap.read()
+    if frame is None:
+        print("No frame available")
+        break
     frameCount += 1
     # skip every 2nd frame for performance reasons
     if frameCount % 2 == 0:
@@ -101,6 +105,8 @@ while(cap.isOpened()):
     chestRadius = chestCenter - xChestMean
     stomachCenter = int(totalStomachMean + 80)
     stomachRadius = stomachCenter - xStomachMean
+    if chestRadius<0 or stomachRadius<0:
+        continue
     # add overlay for transparency of circles
     overlay = frame.copy()
     alpha = 0.4
@@ -137,7 +143,16 @@ while(cap.isOpened()):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-print("Total frames:",frameCount)
-
 cap.release()
 cv2.destroyAllWindows()
+print("Total frames:",frameCount)
+
+# plot means of chest and stomach position
+# create an array with frame numbers, since we skipped every 2nd one
+frameArray = 2*np.array(range(len(chestMeansArray)))
+plt.plot(frameArray, chestMeansArray)
+plt.plot(frameArray, stomachMeansArray)
+plt.legend("Chest", "Stomach")
+plt.ylabel("Horizontal position [pixels]")
+plt.xlabel("Frame")
+plt.show()
