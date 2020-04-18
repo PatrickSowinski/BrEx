@@ -41,28 +41,33 @@ while(cap.isOpened()):
     if totalStomachMean == 0:
         totalStomachMean = 3*imageWidth/4
 
-    # Alternative 1: turn to grayscale
-    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # cv2.imshow('grayscale', gray)
+    colormode = "RED"
+    #colormode = "GRAY"
+    thresh = frame
 
-    # Alternative 2: threshold by defining red colour ranges
-    blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
-    hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
-    # lower mask (0-10)
-    lower_red = np.array([0, 100, 50])
-    upper_red = np.array([10, 255, 255])
-    mask0 = cv2.inRange(hsv, lower_red, upper_red)
-    # upper mask (170-180)
-    lower_red = np.array([170, 100, 50])
-    upper_red = np.array([180, 255, 255])
-    mask1 = cv2.inRange(hsv, lower_red, upper_red)
-    # join my masks
-    mask = cv2.bitwise_not(mask0 + mask1)
+    # Alternative 1: find black body
+    if colormode == "GRAY":
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        ret, thresh = cv2.threshold(gray, 75, 255, 0)
 
-    # threshold to find contours
-    #ret, thresh = cv2.threshold(gray, 75, 255, 0)
-    #cv2.imshow("gray mask", thresh)
-    image, contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    # Alternative 2: find red body
+    if colormode == "RED":
+        blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
+        hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+        # lower mask (0-10)
+        lower_red = np.array([0, 100, 50])
+        upper_red = np.array([10, 255, 255])
+        mask0 = cv2.inRange(hsv, lower_red, upper_red)
+        # upper mask (170-180)
+        lower_red = np.array([170, 100, 50])
+        upper_red = np.array([180, 255, 255])
+        mask1 = cv2.inRange(hsv, lower_red, upper_red)
+        # join my masks
+        mask = mask0 + mask1
+        thresh = cv2.bitwise_not(mask)
+
+    # find contours from threshold
+    image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
     # find largest contours
     areas = [cv2.contourArea(cnt) for cnt in contours]
