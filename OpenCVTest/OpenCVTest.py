@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 # open video from file
-cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
+cap = cv2.VideoCapture("../videos/correct_short_1.mp4")
 # open webcam directly
 #cap = cv2.VideoCapture(0)
 
@@ -12,11 +12,28 @@ cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
 mostRightChest = -1
 mostRightStomach = -1
 
+frameCount = 0
+# initialize variables for chest and stomach positions
+chestMeansArray = []
+stomachMeansArray = []
+totalChestMean = 0.0
+totalStomachMean = 0.0
+
 while(cap.isOpened()):
     ret, frame = cap.read()
+    frameCount += 1
+    # skip every 2nd frame for performance reasons
+    if frameCount % 2 == 0:
+        continue
     # get dimensions
     imageHeight, imageWidth = frame.shape[:2]
     imageCenterY = int(imageHeight / 2)
+
+    # initialize chest and stomach positions at 3/4 to the right (first guess)
+    if totalChestMean == 0:
+        totalChestMean = 3*imageWidth/4
+    if totalStomachMean == 0:
+        totalStomachMean = 3*imageWidth/4
 
     # turn to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -63,17 +80,32 @@ while(cap.isOpened()):
     cv2.line(frame, (xChestMean, 20), (xChestMean, imageCenterY), (0, 0, 255), 2)
     cv2.line(frame, (xStomachMean, imageCenterY), (xStomachMean, imageHeight-20), (0, 0, 255), 2)
 
+    # save chest and stomach means
+    chestMeansArray.append(xChestMean)
+    stomachMeansArray.append(xStomachMean)
+
+    # update mean of means with soft step (or just mean for first 100 frames)
+    if frameCount < 100:
+        totalChestMean = int(np.mean(chestMeansArray))
+        totalStomachMean = int(np.mean(stomachMeansArray))
+    else:
+        updateFactor = 0.02
+        totalChestMean = updateFactor * xChestMean + (1-updateFactor) * totalChestMean
+        totalStomachMean = updateFactor * xStomachMean + (1 - updateFactor) * totalStomachMean
+
+    cv2.line(frame, (int(totalChestMean), 20), (int(totalChestMean), imageCenterY), (0, 0, 255), 1)
+    cv2.line(frame, (int(totalStomachMean), imageCenterY), (int(totalStomachMean), imageHeight - 20), (0, 0, 255), 1)
+
     # draw circles for chest and stomach breathing
-    if xChestMean > mostRightChest:
-        mostRightChest = xChestMean
-    if xStomachMean > mostRightStomach:
-        mostRightStomach = xStomachMean
-    bodyCenter = np.max([mostRightChest, mostRightStomach]) + 100
+    chestCenter = int(totalChestMean + 80)
+    chestRadius = chestCenter - xChestMean
+    stomachCenter = int(totalStomachMean + 80)
+    stomachRadius = stomachCenter - xStomachMean
     # add overlay for transparency of circles
     overlay = frame.copy()
     alpha = 0.4
-    cv2.circle(overlay, (bodyCenter, int(imageHeight/4)), bodyCenter-xChestMean, (255, 0, 0), -1)
-    cv2.circle(overlay, (bodyCenter, int(3*imageHeight/4)), bodyCenter - xStomachMean, (0, 255, 0), -1)
+    cv2.circle(overlay, (chestCenter, int(imageHeight/4)), chestRadius, (255, 0, 0), -1)
+    cv2.circle(overlay, (stomachCenter, int(3*imageHeight/4)), stomachRadius, (0, 255, 0), -1)
     frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
 
     cv2.imshow('contours right half', frame)
@@ -104,6 +136,8 @@ while(cap.isOpened()):
     # close video with 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+print("Total frames:",frameCount)
 
 cap.release()
 cv2.destroyAllWindows()
