@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import cv2
 
 # open video from file
-cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
+#cap = cv2.VideoCapture("../videos/correct_arm_1.mp4")
 # open webcam directly
-#cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)
 
 frameCount = 0
 # initialize variables for chest and stomach positions
@@ -37,8 +37,8 @@ while(cap.isOpened()):
     if totalStomachMean == 0:
         totalStomachMean = 3*imageWidth/4
 
-    #colormode = "RED"
-    colormode = "GRAY"
+    colormode = "RED"
+    #colormode = "GRAY"
     thresh = frame
 
     # Alternative 1: find black body
@@ -61,11 +61,11 @@ while(cap.isOpened()):
         mask1 = cv2.inRange(hsv, lower_red, upper_red)
         # join my masks
         mask = mask0 + mask1
-        #thresh = cv2.bitwise_not(mask)
+        thresh = mask
 
     # find contours from threshold
     image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    #cv2.imshow("Threshold", thresh)
+    cv2.imshow("Threshold", thresh)
 
     # skip if no contours
     if len(contours) < 1:
@@ -86,20 +86,22 @@ while(cap.isOpened()):
     # find left half of points
     xContour = contour_points[:, 0]
     xMean = np.mean(xContour)
-    contourLeft = np.array([point for point in contour_points if point[0] < xMean])
+    xLeft = np.min(xContour)
+    contourLeft = np.array([point for point in contour_points if point[0] < (xMean+xLeft)/2])
     # get top and bottom
     yContour = contourLeft[:, 1]
     yTop = np.min(yContour)
     yBottom = np.max(yContour)
     # remove top and bottom 20 pixels
-    contourLeft = np.array([point for point in contourLeft if point[1] > yTop+20 and point[1] < yBottom - 20])
+    nPixels_topbottom = 50
+    contourLeft = np.array([point for point in contourLeft if point[1] > yTop+nPixels_topbottom and point[1] < yBottom - nPixels_topbottom])
 
     # separate chest and stomach
     contourChest = np.array([point for point in contourLeft if point[1] <= imageCenterY])
     contourStomach = np.array([point for point in contourLeft if point[1] > imageCenterY])
     cv2.polylines(frame, [contourChest], False, (255, 0, 0), 2)
     cv2.polylines(frame, [contourStomach], False, (0, 255, 0), 2)
-
+    """
     # get mean chest and stomach position (horizontal)
     xChest = contourChest[:, 0]
     xStomach = contourStomach[:, 0]
@@ -153,9 +155,9 @@ while(cap.isOpened()):
         breatheCorrect = (abs(stomachDiffAvg) > abs(chestDiffAvg))
         if breatheCorrect:
             cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
+    """
+    cv2.imshow('contours', frame)
 
-    cv2.imshow('contours right half', frame)
-    
     # close video with 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
