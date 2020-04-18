@@ -6,6 +6,9 @@ from matplotlib import pyplot as plt
 
 # open video from file
 cap = cv2.VideoCapture(0)
+lung_area_history = []
+belly_area_history = []
+itr = 0
 while True:
 
     _, img = cap.read()
@@ -36,30 +39,57 @@ while True:
     largest_contour = contours[index_largest_area]
     contour_with_image = cv2.drawContours(img, largest_contour, -1, (255, 0, 255), 3)
 
-    print(largest_contour.shape)
-    print(largest_contour[0][0])
+    #print(largest_contour.shape)
+    #print(largest_contour[0][0])
 
     topmost = largest_contour[largest_contour[:,:,1].argmin()][0]
     bottommost = largest_contour[largest_contour[:,:,1].argmax()][0]
     x, y = tuple((bottommost-topmost)/2)
+    x = int(x)
     y = int(y)
-    print(contour_with_image[0])
+    #print(contour_with_image[0])
     #print(topmost, bottommost)
     
-    lung_area
-    belly_area
+    #print(len(contour_with_image[0]))
+    lung_area = 0
+    belly_area = 0
+    for i in range(len(contour_with_image)):
+        is_lung = False
+        for j in range(len(contour_with_image[i])):
+            if is_lung and np.array_equal(np.array(contour_with_image[i][j]), np.array([255, 0, 255])):
+                is_lung = False
+            elif is_lung and not np.array_equal(np.array(contour_with_image[i][j]), np.array([255, 0, 255])):
+                if i <= y:
+                    lung_area += 1
+                    contour_with_image[i][j] = np.array([255, 0, 0])
+                else:
+                    belly_area += 1
+                    contour_with_image[i][j] = np.array([0, 0, 255])
+            elif not is_lung and np.array_equal(np.array(contour_with_image[i][j]), np.array([255, 0, 255])):
+                is_lung = True
 
 
+
+    #print(lung_area, belly_area ,itr)
+    lung_area_history.append([lung_area, itr])
+    belly_area_history.append([belly_area, itr])
+    #print(lung_area_history)
     cv2.imshow('contour_with_image', contour_with_image)
     #cv2.imshow('img', img)
 
     cv2.imshow('thresh', thresh)
+    itr += 1
     k = cv2.waitKey(30) & 0xff
     if k == 27:
         break
 
 cap.release()
 cv2.destroyAllWindows()
+
+
+plt.plot(lung_area_history)
+plt.plot(belly_area_history)
+plt.show()
 
 #    gray = cv2.cvtColor(img_cut, cv2.COLOR_BGR2GRAY)
 
