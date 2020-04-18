@@ -66,8 +66,7 @@ class VideoCamera(object):
 
         # Alternative 2: find red body
         if colormode == "RED":
-            blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
-            hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             # lower mask (0-10)
             lower_red = np.array([0, 100, 50])
             upper_red = np.array([10, 255, 255])
@@ -80,7 +79,14 @@ class VideoCamera(object):
             mask = mask0 + mask1
             thresh = mask
 
-            # find contours from threshold
+        # use morphological opening and closing to cut out noisy parts of mask
+        kernelOpen = np.ones((31, 31), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
+        kernelClose = np.ones((31, 31), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernelClose)
+        thresh = cv2.GaussianBlur(thresh, (31, 31), 5)
+
+        # find contours from threshold
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
         if (len(contours) > 0):
