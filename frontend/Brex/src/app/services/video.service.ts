@@ -17,4 +17,8 @@ export class VideoService {
   public getVideo(): any {
     return this.http.get('http://localhost:5000/video_feed');
   }
+
+  public send(data: any): any {
+    return this.http.post(this.baseUrl + 'stream_video', data).pipe(map(response => response));
+  }
 }
