@@ -5,13 +5,9 @@ import matplotlib.pyplot as plt
 import cv2
 
 # open video from file
-#cap = cv2.VideoCapture("../videos/correct_short_1.mp4")
+cap = cv2.VideoCapture("../videos/correct_short_1.mp4")
 # open webcam directly
-cap = cv2.VideoCapture(0)
-
-# save most right position of chest and stomach
-mostRightChest = -1
-mostRightStomach = -1
+#cap = cv2.VideoCapture(0)
 
 frameCount = 0
 # initialize variables for chest and stomach positions
@@ -41,8 +37,8 @@ while(cap.isOpened()):
     if totalStomachMean == 0:
         totalStomachMean = 3*imageWidth/4
 
-    colormode = "RED"
-    #colormode = "GRAY"
+    #colormode = "RED"
+    colormode = "GRAY"
     thresh = frame
 
     # Alternative 1: find black body
@@ -144,12 +140,13 @@ while(cap.isOpened()):
 
     # check which part has a larger diff
     # (average over last 20 frames)
-    chestDiffAvg = np.mean(chestDiffArray[-20:])
-    stomachDiffAvg = np.mean(stomachDiffArray[-20:])
-    breatheCorrect = (abs(stomachDiffAvg) > abs(chestDiffAvg))
-
-    if breatheCorrect:
-        cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
+    nFrames_diff = 20
+    if len(chestDiffArray) >= nFrames_diff:
+        chestDiffAvg = np.mean(chestDiffArray[-nFrames_diff:])
+        stomachDiffAvg = np.mean(stomachDiffArray[-nFrames_diff:])
+        breatheCorrect = (abs(stomachDiffAvg) > abs(chestDiffAvg))
+        if breatheCorrect:
+            cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
 
     cv2.imshow('contours right half', frame)
 
@@ -176,6 +173,7 @@ plt.ylabel("Horizontal position [pixels]")
 plt.xlabel("Frame")
 plt.show()
 # plot means of chest and stomach position
+frameArray = 2*np.array(range(len(chestDiffArray)))
 chestPlot = plt.plot(frameArray, chestDiffArray, label="Chest")
 stomachPlot = plt.plot(frameArray, stomachDiffArray, label="Stomach")
 plt.legend()
