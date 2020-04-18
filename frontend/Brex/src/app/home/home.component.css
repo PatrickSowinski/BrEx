@@ -23,13 +23,3 @@
     -webkit-transition: all 0.5s;
 }
 
-.my-span {
-    position: absolute;
-    top: 90%;
-    right: 10%;
-    color: white;
-    font-size: 34px;
-    background-color: white;
-    background:rgba(255, 255, 255,0.5);
-}
-

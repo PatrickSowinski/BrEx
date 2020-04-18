@@ -1,12 +1,12 @@
-<div class="row" style="overflow-y: scroll;" #container>
-    <div class="col-lg-12">
-        <nav class="navbar fixed-top navbar-light bg-light">
-            <a class="navbar-brand d-flex" href="#">
-                <img src="https://cdn.worldvectorlogo.com/logos/bootstrap-icon.svg" width="30" height="30" class="d-inline-block align-top" alt="">
-                <h3 class="ml-3 font-weight-bold" style="font-family: Monaco;">BrEx</h3>
-            </a>
-        </nav>
-    </div>
+<!--<div class="row" style="overflow-y: scroll;" #container>-->
+    <!--<div class="col-lg-12">-->
+        <!--<nav class="navbar fixed-top navbar-light bg-light">-->
+            <!--<a class="navbar-brand d-flex" href="#">-->
+                <!--<img src="https://cdn.worldvectorlogo.com/logos/bootstrap-icon.svg" width="30" height="30" class="d-inline-block align-top" alt="">-->
+                <!--<h3 class="ml-3 font-weight-bold" style="font-family: Monaco;">BrEx</h3>-->
+            <!--</a>-->
+        <!--</nav>-->
+    <!--</div>-->
     <div *ngIf="!displayCamera || !cameraAllowed" class="col-lg-12 image">
         <img style="height: 65vh; width:100%;" src="../../assets/images/coronavirus.jpg" alt="empty">
         <!--<img style="height: 65vh; width:100%;" src="https://ms.sachsen-anhalt.de/fileadmin/_processed_/9/e/csm_Corona-Virus_ahmet_f0b227133d.png" alt="empty">-->
@@ -39,20 +39,20 @@
             </div>
         </div>
     </div>
-    <div class="mx-auto mt-5 mb-5">
-        <button *ngIf="!displayCamera" class="btn btn-primary" (click)="onDisplayClick()">Try out!</button>
-        <div *ngIf="cameraAllowed && displayCamera" >
-            <!--<i class="material-icons">close</i>-->
-            <div class="card">
-                <img id="bg" src="{{ baseUrl }}" height="650" #images>
-                <span class="my-span text-primary p-1">{{instructions[index]}}</span>
-            </div>
-            <div class="mt-2">
-                <button class="btn btn-primary float-right" (click)="index = index + 1;">Next</button>
-                <button class="btn btn-secondary float-right mr-2" (click)="displayCamera = false; index = 0;">Close</button>
-            </div>
-        </div>
+    <div class="d-flex justify-content-center mt-5 mb-5">
+        <button class="btn btn-primary" [routerLink]="['/exercise']" (click)="onDisplayClick()">Try out!</button>
+        <!--<div *ngIf="cameraAllowed && displayCamera" >-->
+            <!--&lt;!&ndash;<i class="material-icons">close</i>&ndash;&gt;-->
+            <!--<div class="card">-->
+                <!--<img id="bg" src="{{ baseUrl }}" height="650" #images>-->
+                <!--<span class="my-span text-primary p-1">{{instructions[index]}}</span>-->
+            <!--</div>-->
+            <!--<div class="mt-2">-->
+                <!--<button class="btn btn-primary float-right" (click)="index = index + 1;">Next</button>-->
+                <!--<button class="btn btn-secondary float-right mr-2" (click)="displayCamera = false; index = 0;">Close</button>-->
+            <!--</div>-->
+        <!--</div>-->
     </div>
-</div>
+<!--</div>-->
 
 
