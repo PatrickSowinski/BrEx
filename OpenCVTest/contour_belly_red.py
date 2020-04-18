@@ -16,7 +16,7 @@ mostRightStomach = -1
 
 while(cap.isOpened()):
     ret, frame = cap.read()
-    cv2.imshow('Frame1', frame)
+    #cv2.imshow('Frame1', frame)
     # get dimensions
     imageHeight, imageWidth = frame.shape[:2]
     imageCenterY = int(imageHeight / 2)
@@ -30,30 +30,35 @@ while(cap.isOpened()):
     #contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     #print(contours)
 
+    blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
+
     #Alternative 2: threshold by defining red colour ranges
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+
 
     # lower mask (0-10)
-    lower_red = np.array([0, 50, 50])
+    lower_red = np.array([0, 100, 50])
     upper_red = np.array([10, 255, 255])
     mask0 = cv2.inRange(hsv, lower_red, upper_red)
 
     # upper mask (170-180)
-    lower_red = np.array([170, 50, 50])
+    lower_red = np.array([170, 100, 50])
     upper_red = np.array([180, 255, 255])
     mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
     # join my masks
-    mask = mask0 + mask1
+    mask = cv2.bitwise_not(mask0 + mask1)
 
+    #blurred_frame = cv2.GaussianBlur(mask, (199, 199), 5)
 
     #mask = cv2.inRange(hsv, lower_red, higher_red)
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    contour2 = cv2.drawContours(frame,contours, -1, (0, 255, 0), 3)
+    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #cv2.drawContours(frame,contours, -1, (0, 255, 0), 3)
     cv2.imshow('Frame3', mask)
-    cv2.imshow('Frame4', contour2)
-    #print(contours)
+    #cv2.imshow('Frame4', contour2)
 
+    if len(contours) < 1:
+        continue
     # find largest contours
     areas = [cv2.contourArea(cnt) for cnt in contours]
     index_largest_area = np.argmax(areas)
@@ -61,8 +66,9 @@ while(cap.isOpened()):
     #largest_3_indices = np.argsort(areas)[-3:]
     #second_contour = contours[largest_3_indices[1]]
     #third_contour = contours[largest_3_indices[0]]
-    img = cv2.drawContours(frame, largest_contour, 1, (0, 255, 0), 3)
-    cv2.imshow('contours3', img)
+    cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 3)
+    cv2.imshow('largest red contour', frame)
+    """
     '''
     # try to find the right part of the contour points and remove the rest
     contour_points = np.squeeze(largest_contour)
@@ -107,6 +113,7 @@ while(cap.isOpened()):
     cv2.imshow('contours right half', frame)
     cv2.waitKey()
     """
+    """
     # find polygon around largest contour
     epsilon = 0.1*cv2.arcLength(largest_contour, True)
     polygon = cv2.approxPolyDP(largest_contour, epsilon, True)
@@ -128,7 +135,7 @@ while(cap.isOpened()):
     top_right = right_points[0]
     bottom_right = right_points[1]
     """
-'''
+
     # close video with 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
