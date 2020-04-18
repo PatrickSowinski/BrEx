@@ -12,7 +12,7 @@ while(cap.isOpened()):
     ret, frame = cap.read()
     # get dimensions
     imageHeight, imageWidth = frame.shape[:2]
-    imageCenterY = imageHeight / 2
+    imageCenterY = int(imageHeight / 2)
 
     # turn to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -48,11 +48,18 @@ while(cap.isOpened()):
     # separate chest and stomach
     contourChest = np.array([point for point in contourRight if point[1] <= imageCenterY])
     contourStomach = np.array([point for point in contourRight if point[1] > imageCenterY])
+    cv2.polylines(frame, [contourChest], False, (255, 0, 0), 2)
+    cv2.polylines(frame, [contourStomach], False, (0, 255, 0), 2)
 
-    img = cv2.polylines(frame, [contourChest], False, (255, 0, 0), 3)
-    img = cv2.polylines(frame, [contourStomach], False, (0, 255, 0), 3)
+    # get mean chest and stomach position (horizontal)
+    xChest = contourChest[:, 0]
+    xStomach = contourStomach[:, 0]
+    xChestMean = int(np.mean(xChest))
+    xStomachMean = int(np.mean(xStomach))
+    cv2.line(frame, (xChestMean, 20), (xChestMean, imageCenterY), (0, 0, 255), 2)
+    cv2.line(frame, (xStomachMean, imageCenterY), (xStomachMean, imageHeight-20), (0, 0, 255), 2)
+
     cv2.imshow('contours right half', frame)
-
 
     """
     # find polygon around largest contour
