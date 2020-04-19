@@ -19,6 +19,9 @@ class VideoCamera(object):
         self.stomachMeansArray = []
         self.totalChestMean = 0.0
         self.totalStomachMean = 0.0
+
+        self.diff_maxpoint_contour_array = []
+
         # If you decide to use video.mp4, you must have this file in the folder
         # as the main.py.
         # self.video = cv2.VideoCapture('video.mp4')
@@ -98,6 +101,8 @@ class VideoCamera(object):
         areas = [cv2.contourArea(cnt) for cnt in contours]
         index_largest_area = np.argmax(areas)
         largest_contour = contours[index_largest_area]
+        extTop = tuple(largest_contour[largest_contour[:, :, 1].argmin()][0])
+        self.diff_maxpoint_contour_array.append(extTop[1])
         # cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 3)
         # largest_3_indices = np.argsort(areas)[-3:]
         # second_contour = contours[largest_3_indices[1]]
@@ -173,39 +178,67 @@ class VideoCamera(object):
         self.stomachDiffArray.append(stomachDiff)
         # check which part has a larger diff
         # (average over last 20 frames)
-        nFrames_diff = 20
-        print(len(self.chestDiffArray))
+        nFrames_diff = 80
         if len(self.chestDiffArray) >= nFrames_diff:
-            chestDiffAvg_mean_last3 = int(np.mean(self.chestDiffArray[-3:]))
-            chestDiffAvg_mean_first3 = int(np.mean(self.chestDiffArray[:3]))
-            stomachDiffAvg_mean_last3 = int(np.mean(self.stomachDiffArray[-3:]))
-            stomachDiffAvg_mean_first3 = int(np.mean(self.stomachDiffArray[:3]))
-            chest_expansion_rate = chestDiffAvg_mean_first3 - chestDiffAvg_mean_last3
-            stomach_expansion_rate = stomachDiffAvg_mean_first3 - stomachDiffAvg_mean_last3
+            chestDiffAvg_mean_last3 = int(np.mean(self.chestDiffArray[-4:]))
+            chestDiffAvg_mean_first3 = int(np.mean(self.chestDiffArray[:4]))
+            stomachDiffAvg_mean_last3 = int(np.mean(self.stomachDiffArray[-4:]))
+            stomachDiffAvg_mean_first3 = int(np.mean(self.stomachDiffArray[:4]))
 
-            print ("Difference between chest and stomach expansion" + string(chest_expansion_rate - stomach_expansion_rate))
-            
-            if (chest_expansion_rate - stomach_expansion_rate) > 0:
-                if (chest_expansion_rate > 0):
-                    self.state = "lung_inhale"
-                    print("lung_inhale")
-                elif (chest_expansion_rate < 0):
+            chest_expansion_rate = int(chestDiffAvg_mean_first3 - chestDiffAvg_mean_last3)
+            stomach_expansion_rate = int(stomachDiffAvg_mean_first3 - stomachDiffAvg_mean_last3)
+
+
+            diff_maxpoint_contour_max = int(np.max(self.diff_maxpoint_contour_array[-4:]))
+            diff_maxpoint_contour_min = int(np.min(self.diff_maxpoint_contour_array[:4]))
+
+
+            '''
+            #print ("Difference between chest and stomach expansion" + str(chest_expansion_rate - stomach_expansion_rate))
+
+            print(int(self.diff_maxpoint_contour_array_mean_first3 - self.diff_maxpoint_contour_array_mean_last3))
+            if (int(self.diff_maxpoint_contour_array_mean_first3 - self.diff_maxpoint_contour_array_mean_last3)) > 0:
+                self.state = "lung_inhale"
+                print("lung_inhale")
+            elif (int(self.diff_maxpoint_contour_array_mean_first3 - self.diff_maxpoint_contour_array_mean_last3)) < 0:
+                self.state = "lung_exhale"
+                print("lung_exhale")
+            else:
+                if (stomach_expansion_rate > 0):
+                    self.state = "belly_inhale"
+                    print("belly_inhale")
+                elif (stomach_expansion_rate < 0):
+                    self.state = "belly_exhale"
+                    print("belly_exhale")
+                else:
+                    self.state = "holding"
+                    print("holding")
+            '''
+
+            if (chest_expansion_rate > 0) or (stomach_expansion_rate > 0):
+                if (chest_expansion_rate - stomach_expansion_rate) > 0:
                     self.state = "lung_exhale"
                     print("lung_exhale")
                 else:
-                    self.state = "hold_breath"
-                    #print("hold_breath")
-
-
-            if (stomach_expansion_rate < 0):
-                self.state = "belly_inhale"
-                print("belly_inhale")
-            elif (stomach_expansion_rate > 0):
-                self.state = "belly_exhale"
-                print("belly_exhale")
+                    self.state = "belly_exhale"
+                    print("belly_exhale")
+            elif (chest_expansion_rate < 0) or (stomach_expansion_rate < 0):
+                if (chest_expansion_rate - stomach_expansion_rate) < 0:
+                    self.state = "lung_inhale"
+                    print("lung_inhale")
+                else:
+                    self.state = "belly_inhale"
+                    print("belly_inhale")
+            elif (chest_expansion_rate > 0) or (stomach_expansion_rate < 0):
+                    self.state = "lung_exhale"
+                    print("lung_exhale")
+            elif (chest_expansion_rate < 0) or (stomach_expansion_rate > 0):
+                    self.state = "lung_inhale"
+                    print("lung_inhale")
             else:
-                self.state = "hold_breath"
-                #print("hold_breath")
+                self.state = "holding"
+                print("holding")
+
 
 
         # close video with 'q' key
