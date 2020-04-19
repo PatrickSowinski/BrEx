@@ -9,7 +9,7 @@ import { VideoService } from '../services/video.service';
 })
 export class ExerciseComponent implements OnInit, AfterViewInit {
 
-  baseUrl = 'http://localhost:5000/video_feed'
+  baseUrl = 'http://localhost:5000/demo_mode'
   public cameraAllowed = false;
 
   public earlyInstructions = [
