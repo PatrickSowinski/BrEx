@@ -48,7 +48,7 @@ def getSuccess():
 	print("COLOR: " + str(cam.color))
 	return {"success": cam.contour_found}, 200
 
-@app.route('/debug_mode')
+@app.route('/demo_mode')
 def getDebugMode():
 	cam = VideoCamera(debug=True)
 	return Response(gen(cam),
