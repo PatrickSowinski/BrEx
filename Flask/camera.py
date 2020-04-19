@@ -22,31 +22,21 @@ class VideoCamera(object):
 
         self.diff_maxpoint_contour_array = []
 
-        # If you decide to use video.mp4, you must have this file in the folder
-        # as the main.py.
-        # self.video = cv2.VideoCapture('video.mp4')
-
     def __del__(self):
         self.video.release()
 
     def get_frame(self):
         success, frame = self.video.read()
-        #frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-
-        # save most right position of chest and stomach
-        mostRightChest = -1
-        mostRightStomach = -1
 
         cor_position = False
         breatheCorrect=False
-
 
         if frame is None:
             print("No frame available")
             ret, jpeg = cv2.imencode('.jpg', frame)
             return jpeg.tobytes(),False,False
         self.frameCount += 1
+
         # skip every 2nd frame for performance reasons
         #if self.frameCount % 2 == 0:
         #    ret, jpeg = cv2.imencode('.jpg', frame)
@@ -54,12 +44,6 @@ class VideoCamera(object):
         # get dimensions
         imageHeight, imageWidth = frame.shape[:2]
         imageCenterY = int(imageHeight / 2)
-
-        # initialize chest and stomach positions at 3/4 to the right (first guess)
-        if self.totalChestMean == 0:
-            self.totalChestMean = 3 * imageWidth / 4
-        if self.totalStomachMean == 0:
-            self.totalStomachMean = 3 * imageWidth / 4
 
         colormode = "RED"
         # colormode = "GRAY"
@@ -73,8 +57,7 @@ class VideoCamera(object):
 
         # Alternative 2: find red body
         if colormode == "RED":
-            blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
-            hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             # lower mask (0-10)
             lower_red = np.array([0, 100, 50])
             upper_red = np.array([10, 255, 255])
@@ -87,7 +70,14 @@ class VideoCamera(object):
             mask = mask0 + mask1
             thresh = mask
 
-            # find contours from threshold
+        # use morphological opening and closing to cut out noisy parts of mask
+        kernelOpen = np.ones((31, 31), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
+        kernelClose = np.ones((31, 31), np.uint8)
+        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernelClose)
+        thresh = cv2.GaussianBlur(thresh, (31, 31), 5)
+
+        # find contours from threshold
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
         if (len(contours) > 0):
@@ -163,6 +153,9 @@ class VideoCamera(object):
         stomachCenter = int(self.totalStomachMean + 80)
         stomachRadius = stomachCenter - xStomachMean
         if chestRadius<0 or stomachRadius<0:
+            # reset total means
+            self.totalChestMean = xChestMean
+            self.totalStomachMean = xStomachMean
             ret, jpeg = cv2.imencode('.jpg', frame)
             return jpeg.tobytes(),False,False
         # add overlay for transparency of circles
@@ -171,15 +164,24 @@ class VideoCamera(object):
         cv2.circle(overlay, (chestCenter, int(imageHeight/4)), chestRadius, (255, 0, 0), -1)
         cv2.circle(overlay, (stomachCenter, int(3*imageHeight/4)), stomachRadius, (0, 255, 0), -1)
         frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
+
         # save diff of chest and stomach (= total mean - current)
         chestDiff = self.totalChestMean - xChestMean #if + inhale if - exhale
         self.chestDiffArray.append(chestDiff)
         stomachDiff = self.totalStomachMean - xStomachMean #if + inhale if - exhale
         self.stomachDiffArray.append(stomachDiff)
+
+        # check if diff is unusually large
+        if max(abs(chestDiff), abs(stomachDiff)) > imageHeight/6:
+            # reset total means
+            self.totalChestMean = xChestMean
+            self.totalStomachMean = xStomachMean
+
         # check which part has a larger diff
         # (average over last 20 frames)
         nFrames_diff = 80
         if len(self.chestDiffArray) >= nFrames_diff:
+
             chestDiffAvg_mean_last3 = int(np.mean(self.chestDiffArray[-4:]))
             chestDiffAvg_mean_first3 = int(np.mean(self.chestDiffArray[:4]))
             stomachDiffAvg_mean_last3 = int(np.mean(self.stomachDiffArray[-4:]))
@@ -238,7 +240,6 @@ class VideoCamera(object):
             else:
                 self.state = "holding"
                 print("holding")
-
 
 
         # close video with 'q' key
