@@ -55,7 +55,7 @@ class VideoCamera(object):
         # adding additional dimension for rgb to the mask, by default it gets 1
         # multiply it with input image to get the segmented image
         img_cut = frame * mask2[:, :, np.newaxis]
-        cv2.imshow('img_cut', img_cut)
+        # cv2.imshow('img_cut', img_cut)
         rgb_img = cv2.cvtColor(img_cut, cv2.COLOR_BGR2RGB)
 
 
@@ -133,7 +133,7 @@ class VideoCamera(object):
             # join my masks
             mask = mask0 + mask1
             thresh = cv2.bitwise_not(mask)
-        cv2.imshow('thresh', thresh)
+        # cv2.imshow('thresh', thresh)
         '''
         # use morphological opening and closing to cut out noisy parts of mask
         kernelOpen = np.ones((15, 15), np.uint8)

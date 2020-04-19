@@ -96,6 +96,7 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
   }
 
   stopExercise() {
+    console.log("bittiii")
     this.displayResultButton = true;
     this.instructionsFinished = true;
     this.resultFound = false;

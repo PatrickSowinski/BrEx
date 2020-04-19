@@ -10,9 +10,18 @@
 
 .my-span-img {
     position: absolute;
-    top: 60%;
-    right: 10%;
+    top: -10%;
+    right: 35%;
     color: white;
     font-size: 34px;
-    opacity: 0.6;
+    opacity: 0.3;
+}
+
+.result {
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    color: white;
+    font-size: 34px;
+    /*opacity: 0.3;*/
 }

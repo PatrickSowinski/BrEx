@@ -2,22 +2,29 @@
     <div class="mx-auto mt-5 mb-5">
         <div *ngIf="cameraAllowed">
             <div class="card m-0">
-                <img id="bg" src="{{ baseUrl }}" height="650">
+                <img id="bg" src="{{ baseUrl }}" height="600">
                 <span *ngIf="displayNextButton" class="my-span-img float-left">
-                    <img src="../../assets/images/sideway-human.png" height="715" alt="empty">
+                    <img src="../../assets/images/sideway-human.png" height="660" alt="empty">
                 </span>
-                <span *ngIf="!displayNextButton && !displayStartButton && !instructionsFinished" class="my-span text-primary p-1">{{instructions[index].value}}</span>
-                <span *ngIf="displayNextButton || displayStartButton" class="my-span text-primary p-1">{{earlyInstructions[earlyIndex]}}</span>
+                <!--<span *ngIf="!displayNextButton && !displayStartButton && !instructionsFinished" class="my-span text-primary p-1">{{instructions[index].value}}</span>-->
+                <!--<span *ngIf="displayNextButton || displayStartButton" class="my-span text-primary p-1">{{earlyInstructions[earlyIndex]}}</span>-->
                 <span *ngIf="resultFound" class="result">
                     <img *ngIf="resultCalc" src="../../assets/images/correct.png" height="200" alt="empty">
                     <img *ngIf="!resultCalc" src="../../assets/images/wrong.png" height="200" alt="empty">
                 </span>
             </div>
-            <div class="d-flex justify-content-center mt-2">
-                <button *ngIf="displayNextButton" class="btn btn-primary" (click)="nextClick()">Next</button>
-                <button *ngIf="displayStartButton" class="btn btn-primary" [disabled]="!enableStart" (click)="startExercise()">Start</button>
-                <button *ngIf="displayResultButton" class="btn btn-primary">Results</button>
-                <h1 id="countdown"></h1>
+            <div class="text-center mt-2">
+                <div>
+                    <h4 *ngIf="!displayNextButton && !displayStartButton && !instructionsFinished" class="text-primary p-1">{{instructions[index].value}}</h4>
+                    <h4 *ngIf="displayNextButton || displayStartButton" class="text-primary p-1">{{earlyInstructions[earlyIndex]}}</h4>
+                </div>
+                <div>
+                    <button *ngIf="displayNextButton" class="btn btn-primary" (click)="nextClick()">Next</button>
+                    <button *ngIf="displayStartButton" class="btn btn-primary" [disabled]="!enableStart" (click)="startExercise()">Start</button>
+                    <button *ngIf="displayResultButton" class="btn btn-primary">Results</button>
+                    <h1 id="countdown"></h1>
+                </div>
+
             </div>
         </div>
 
