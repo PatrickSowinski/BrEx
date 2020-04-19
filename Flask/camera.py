@@ -1,8 +1,10 @@
 import cv2
+import time
 import numpy as np
+from sklearn.cluster import KMeans
 
 class VideoCamera(object):
-    def __init__(self):
+    def __init__(self, debug=False):
         # Using OpenCV to capture from device 0. If you have trouble capturing
         # from a webcam, comment the line below out and use a video file
         # instead.
@@ -23,11 +25,52 @@ class VideoCamera(object):
 
         self.diff_maxpoint_contour_array = []
 
+        self.debug = debug
+
+        self.color = None
+
     def __del__(self):
         self.video.release()
 
+    def cut(self):
+        print("hello")
+        # Color determination only once
+        success, frame = self.video.read()
+
+        mask = np.zeros(frame.shape[:2], np.uint8)  # img.shape[:2] = (480, 640)
+
+        bgdModel = np.zeros((1, 65), np.float64)
+        fgdModel = np.zeros((1, 65), np.float64)
+
+        rect = (int(frame.shape[1] / 3), 10, 250, 470)
+
+        start_time = time.time()
+        # this modifies mask
+        cv2.grabCut(frame, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+        print("--- GrapCut takes %s seconds ---" % (time.time() - start_time))
+
+        # If mask==2 or mask== 1, mask2 get 0, other wise it gets 1 as 'uint8' type.
+        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+
+        # adding additional dimension for rgb to the mask, by default it gets 1
+        # multiply it with input image to get the segmented image
+        img_cut = frame * mask2[:, :, np.newaxis]
+        cv2.imshow('img_cut', img_cut)
+        rgb_img = cv2.cvtColor(img_cut, cv2.COLOR_BGR2RGB)
+
+
+        rgb_img = rgb_img.reshape((rgb_img.shape[0] * rgb_img.shape[1], 3))  # represent as row*column,channel number
+        clt = KMeans(n_clusters=4)  # cluster number
+        clt.fit(rgb_img)
+        # hist = find_histogram(clt)
+        color = clt.cluster_centers_[1]
+        print(color)
+        self.color = color
+
     def get_frame(self):
         success, frame = self.video.read()
+        success, debug_frame = self.video.read()
+
 
         cor_position = False
         breatheCorrect=False
@@ -46,6 +89,7 @@ class VideoCamera(object):
         imageHeight, imageWidth = frame.shape[:2]
         imageCenterY = int(imageHeight / 2)
 
+        #colormode = "AUTO"
         colormode = "RED"
         # colormode = "GRAY"
         thresh = frame
@@ -70,6 +114,26 @@ class VideoCamera(object):
             # join my masks
             mask = mask0 + mask1
             thresh = mask
+
+        if colormode == "AUTO":
+            H = self.color[0]
+            print(H)
+            #[count, x] = imhist(Image);
+            #H=128 # set manually -delete later
+            blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
+            hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+            # lower mask (0-10)
+            lower_color = np.array([int(H*0.8), 0, 50])
+            upper_color = np.array([int(H*1.2), 50, 150])
+            mask0 = cv2.inRange(hsv, lower_color, upper_color)
+            # upper mask (170-180)
+            lower_color = np.array([int(H), 0, 50])
+            upper_color = np.array([int(H*1.5), 50, 150])
+            mask1 = cv2.inRange(hsv, lower_color, upper_color)
+            # join my masks
+            mask = mask0 + mask1
+            thresh = cv2.bitwise_not(mask)
+        cv2.imshow('thresh', thresh)
         '''
         # use morphological opening and closing to cut out noisy parts of mask
         kernelOpen = np.ones((15, 15), np.uint8)
@@ -255,6 +319,10 @@ class VideoCamera(object):
         # We are using Motion JPEG, but OpenCV defaults to capture raw images,
         # so we must encode it into JPEG in order to correctly display the
         # video stream.
+
+        if self.debug:
+            ret, jpeg = cv2.imencode('.jpg', debug_frame)
+            return jpeg.tobytes(),False,False
 
         ret, jpeg = cv2.imencode('.jpg', frame)
         return jpeg.tobytes(), cor_position, breatheCorrect

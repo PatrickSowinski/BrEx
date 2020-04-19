@@ -48,6 +48,7 @@ mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
 # adding additional dimension for rgb to the mask, by default it gets 1
 # multiply it with input image to get the segmented image
 img_cut = frame*mask2[:,:,np.newaxis]
+cv2.imshow('rgb_img', img_cut)
 rgb_img = cv2.cvtColor(img_cut, cv2.COLOR_BGR2RGB)
 
 rgb_img = rgb_img.reshape((rgb_img.shape[0] * rgb_img.shape[1],3)) #represent as row*column,channel number
@@ -124,7 +125,7 @@ while(cap.isOpened()):
 
     if colormode == "AUTO":
         H = color[0]
-        print(color)
+        #print(color)
         blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
         hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
         # lower mask (0-10)
@@ -139,8 +140,11 @@ while(cap.isOpened()):
         mask = mask0 + mask1
         thresh = cv2.bitwise_not(mask)
 
+
+    cv2.imshow('thresh', img_cut)
+
     # find contours from threshold
-    image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
     # find largest contours
     areas = [cv2.contourArea(cnt) for cnt in contours]
@@ -224,6 +228,7 @@ while(cap.isOpened()):
     if breatheCorrect:
         cv2.circle(frame, (50, 50), 10, (0, 255, 0), -1)
 
+    cv2.imshow('contours right half', thresh)
     cv2.imshow('contours right half', frame)
 
     # close video with 'q' key
