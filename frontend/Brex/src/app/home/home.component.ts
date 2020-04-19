@@ -1,4 +1,5 @@
 import {Component, ElementRef, OnInit, ViewChild, AfterViewInit} from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {VideoService} from '../services/video.service';
 
 @Component({
@@ -9,6 +10,7 @@ import {VideoService} from '../services/video.service';
 export class HomeComponent implements OnInit, AfterViewInit {
 
   baseUrl = 'http://localhost:5000/video_feed'
+  public safeURL: SafeResourceUrl;
   cameraAllowed = false;
   displayCamera = false;
 
@@ -18,8 +20,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
   @ViewChild('record') video: ElementRef;
   @ViewChild('container') container: ElementRef;
 
-  public constructor(private videoService: VideoService) {
+  public constructor(
+      private videoService: VideoService,
+      private sanitizer: DomSanitizer
+  ) {
+    this.safeURL = this.sanitizer.bypassSecurityTrustResourceUrl('https://www.youtube.com/embed/HwLzAdriec0');
   }
+
+
 
   ngOnInit() { }
 
