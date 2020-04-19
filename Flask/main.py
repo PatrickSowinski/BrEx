@@ -32,6 +32,12 @@ def gen(cam):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
+def plot(cam):
+    while True:
+        plot = cam.getPlot()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + plot + b'\r\n\r\n')
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -52,6 +58,11 @@ def getSuccess():
 def getDebugMode():
 	cam = VideoCamera(debug=True)
 	return Response(gen(cam),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/plot')
+def getPlotMode():
+    return Response(plot(cam),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':

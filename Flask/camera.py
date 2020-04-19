@@ -2,6 +2,7 @@ import cv2
 import time
 import numpy as np
 from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
 
 class VideoCamera(object):
     def __init__(self, debug=False):
@@ -22,6 +23,8 @@ class VideoCamera(object):
         self.stomachMeansArray = []
         self.totalChestMean = 0.0
         self.totalStomachMean = 0.0
+        self.chest_expansion_rate_array = []
+        self.stomach_expansion_rate_array = []
 
         self.diff_maxpoint_contour_array = []
 
@@ -32,10 +35,20 @@ class VideoCamera(object):
     def __del__(self):
         self.video.release()
 
+    def getPlot(self):
+        plt.plot(self.chest_expansion_rate_array)
+        plt.plot(self.stomach_expansion_rate_array)
+        plt.savefig('foo.jpg')
+        jpeg = cv2.imread('foo.jpg')
+        success, encoded_image = cv2.imencode('.png', jpeg)
+        return encoded_image.tobytes()
+
     def cut(self):
         print("hello")
         # Color determination only once
         success, frame = self.video.read()
+        print(frame)
+        print(type(frame))
 
         mask = np.zeros(frame.shape[:2], np.uint8)  # img.shape[:2] = (480, 640)
 
@@ -89,8 +102,8 @@ class VideoCamera(object):
         imageHeight, imageWidth = frame.shape[:2]
         imageCenterY = int(imageHeight / 2)
 
-        #colormode = "AUTO"
-        colormode = "RED"
+        colormode = "AUTO"
+        #colormode = "RED"
         # colormode = "GRAY"
         thresh = frame
 
@@ -117,18 +130,20 @@ class VideoCamera(object):
 
         if colormode == "AUTO":
             H = self.color[0]
+            S = self.color[1]
+            V = self.color[2]
             print(H)
             #[count, x] = imhist(Image);
             #H=128 # set manually -delete later
             blurred_frame = cv2.GaussianBlur(frame, (31, 31), 5)
             hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
             # lower mask (0-10)
-            lower_color = np.array([int(H*0.8), 0, 50])
-            upper_color = np.array([int(H*1.2), 50, 150])
+            lower_color = np.array([int(H*0.8), int(S*0.5), int(V*0.5)])
+            upper_color = np.array([int(H*1.2), int(S*1.5), int(V*1.5)])
             mask0 = cv2.inRange(hsv, lower_color, upper_color)
             # upper mask (170-180)
-            lower_color = np.array([int(H), 0, 50])
-            upper_color = np.array([int(H*1.5), 50, 150])
+            lower_color = np.array([int(H*0.8), int(S*0.5), int(V*0.5)])
+            upper_color = np.array([int(H*1.5), int(S*1.5), int(V*1.5)])
             mask1 = cv2.inRange(hsv, lower_color, upper_color)
             # join my masks
             mask = mask0 + mask1
@@ -255,6 +270,8 @@ class VideoCamera(object):
             chest_expansion_rate = int(chestDiffAvg_mean_first3 - chestDiffAvg_mean_last3)
             stomach_expansion_rate = int(stomachDiffAvg_mean_first3 - stomachDiffAvg_mean_last3)
 
+            self.chest_expansion_rate_array.append(chest_expansion_rate)
+            self.stomach_expansion_rate_array.append(stomach_expansion_rate)
 
             diff_maxpoint_contour_max = int(np.max(self.diff_maxpoint_contour_array[-10:]))
             diff_maxpoint_contour_min = int(np.min(self.diff_maxpoint_contour_array[-20:-10]))
