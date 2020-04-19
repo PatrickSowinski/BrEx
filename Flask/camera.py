@@ -250,7 +250,7 @@ class VideoCamera(object):
         # close video with 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
             ret, jpeg = cv2.imencode('.jpg', frame)
-            return jpeg.tobytes(),False,False
+            return jpeg.tobytes(),False, False
         cor_position=True
         # We are using Motion JPEG, but OpenCV defaults to capture raw images,
         # so we must encode it into JPEG in order to correctly display the

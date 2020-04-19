@@ -20,6 +20,7 @@ import json
 
 app = Flask(__name__)
 CORS(app)
+cam = VideoCamera()
 
 @app.route('/')
 def index():
@@ -31,18 +32,19 @@ def gen(camera):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
+
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(VideoCamera()),
+    return Response(gen(cam),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/calculations')
 def getCalculations():
-	return {"calculations": VideoCamera().state}, 400
+	return {"calculations": cam.state}, 400
 
 @app.route('/success')
 def getSuccess():
-	return {"success": VideoCamera().contour_found}, 400
+	return {"success": cam.contour_found}, 400
 
 if __name__ == '__main__':
     app.run(host='localhost', debug=True)
