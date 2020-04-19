@@ -10,13 +10,15 @@ import {VideoService} from './services/video.service';
 import { HomeComponent } from './home/home.component';
 import { ExerciseComponent } from './exercise/exercise.component';
 import { SolutionComponent } from './solution/solution.component';
+import { PressComponent } from './press/press.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
     ExerciseComponent,
-    SolutionComponent
+    SolutionComponent,
+    PressComponent
   ],
   imports: [
     BrowserModule,

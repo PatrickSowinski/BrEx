@@ -1,5 +1,7 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 
+import { VideoService } from '../services/video.service';
+
 @Component({
   selector: 'app-exercise',
   templateUrl: './exercise.component.html',
@@ -17,17 +19,16 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
   ];
 
   public instructions = [
-    'Inhale and hold your breath for 5 seconds',
-    'Exhale',
-    'Inhale and hold your breath for 5 seconds',
-    'Exhale',
-    'Inhale and hold your breath for 5 seconds',
-    'Exhale',
-    'Inhale and hold your breath for 5 seconds',
-    'Exhale',
-    'Inhale and hold your breath for 5 seconds',
-    'Exhale',
-    'Do a big cough'
+    { value: 'Inhale from your belly and hold your breath for 5 seconds', action: 'belly_inhale'},
+    { value: 'Exhale', action: 'belly_exhale' },
+    { value: 'Inhale from your belly and hold your breath for 5 seconds', action: 'belly_inhale'},
+    { value: 'Exhale', action: 'belly_exhale' },
+    { value: 'Inhale from your lung and hold your breath for 5 seconds', action: 'lung_inhale'},
+    { value: 'Exhale', action: 'lung_exhale' },
+    { value: 'Inhale from your lung and hold your breath for 5 seconds', action: 'lung_inhale'},
+    { value: 'Exhale', action: 'lung_exhale' },
+    // 'Inhale and hold your breath for 5 seconds',
+    // 'Exhale',
   ];
 
   public index = 0;
@@ -37,8 +38,14 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
   public displayStartButton = false;
   public displayNextButton = true;
   public displayResultButton = false;
+  public enableStart = false;
 
-  constructor() { }
+  // result calculation
+  public resultCalc: boolean;
+  public resultFound = false;
+  public instructionsFinished = false;
+
+  constructor(private videoService: VideoService) { }
 
   ngOnInit(): void {
   }
@@ -46,9 +53,6 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-        // this.video.nativeElement.srcObject = stream;
-        // this.video.nativeElement.play();
-        // this.postStream(this.video.nativeElement.srcObject);
         this.cameraAllowed = true;
       });
     }
@@ -63,6 +67,7 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
       timeRange = 3;
     }
     this.startTimer(timeRange).then(() => {
+      this.calculateBreathe(this.index);
       this.index++;
       if (this.index <= this.instructions.length) {
         this.startExercise();
@@ -92,14 +97,38 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
 
   stopExercise() {
     this.displayResultButton = true;
+    this.instructionsFinished = true;
+    this.resultFound = false;
   }
 
   nextClick() {
     this.earlyIndex += 1;
     if (this.earlyIndex >= 2) {
       this.displayNextButton = false;
+      this.getSuccess();
       this.displayStartButton = true;
     }
+  }
+
+  calculateBreathe(index) {
+    this.videoService.getCalculations().subscribe(data => {
+      const calcs = data.calculations;
+      this.resultFound = true;
+      if (this.instructions[index].action === calcs) {
+        this.resultCalc = true;
+      } else {
+        this.resultCalc = false;
+      }
+    });
+  }
+
+  getSuccess() {
+    this.videoService.getStart().subscribe(data => {
+      const start = data;
+      if (start.success) {
+        this.enableStart = true;
+      }
+    });
   }
 
 }
