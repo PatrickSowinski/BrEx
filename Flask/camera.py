@@ -8,6 +8,7 @@ class VideoCamera(object):
         # instead.
         self.video = cv2.VideoCapture(0)
         self.contour_found = False
+        self.state_array = []
         self.state = ""
 
         self.chestDiffArray = []
@@ -69,14 +70,14 @@ class VideoCamera(object):
             # join my masks
             mask = mask0 + mask1
             thresh = mask
-
+        '''
         # use morphological opening and closing to cut out noisy parts of mask
-        kernelOpen = np.ones((31, 31), np.uint8)
+        kernelOpen = np.ones((15, 15), np.uint8)
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
-        kernelClose = np.ones((31, 31), np.uint8)
+        kernelClose = np.ones((15, 15), np.uint8)
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernelClose)
-        thresh = cv2.GaussianBlur(thresh, (31, 31), 5)
-
+        thresh = cv2.GaussianBlur(thresh, (15, 15), 5)
+        '''
         # find contours from threshold
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
@@ -142,7 +143,7 @@ class VideoCamera(object):
             self.totalChestMean = np.mean(self.chestMeansArray)
             self.totalStomachMean = np.mean(self.stomachMeansArray)
         else:
-            updateFactor = 0.02
+            updateFactor = 0.005
             self.totalChestMean = updateFactor * xChestMean + (1-updateFactor) * self.totalChestMean
             self.totalStomachMean = updateFactor * xStomachMean + (1 - updateFactor) * self.totalStomachMean
         cv2.line(frame, (int(self.totalChestMean), 20), (int(self.totalChestMean), imageCenterY), (0, 0, 255), 1)
@@ -161,7 +162,7 @@ class VideoCamera(object):
         # add overlay for transparency of circles
         overlay = frame.copy()
         alpha = 0.4
-        cv2.circle(overlay, (chestCenter, int(imageHeight/4)), chestRadius, (255, 0, 0), -1)
+        cv2.circle(overlay, (chestCenter, int(3*imageHeight/8)-10), chestRadius, (255, 0, 0), -1)
         cv2.circle(overlay, (stomachCenter, int(3*imageHeight/4)), stomachRadius, (0, 255, 0), -1)
         frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
 
@@ -182,17 +183,17 @@ class VideoCamera(object):
         nFrames_diff = 80
         if len(self.chestDiffArray) >= nFrames_diff:
 
-            chestDiffAvg_mean_last3 = int(np.mean(self.chestDiffArray[-4:]))
-            chestDiffAvg_mean_first3 = int(np.mean(self.chestDiffArray[:4]))
-            stomachDiffAvg_mean_last3 = int(np.mean(self.stomachDiffArray[-4:]))
-            stomachDiffAvg_mean_first3 = int(np.mean(self.stomachDiffArray[:4]))
+            chestDiffAvg_mean_last3 = int(np.mean(self.chestDiffArray[-10:]))
+            chestDiffAvg_mean_first3 = int(np.mean(self.chestDiffArray[-20:-10]))
+            stomachDiffAvg_mean_last3 = int(np.mean(self.stomachDiffArray[-10:]))
+            stomachDiffAvg_mean_first3 = int(np.mean(self.stomachDiffArray[-20:-10]))
 
             chest_expansion_rate = int(chestDiffAvg_mean_first3 - chestDiffAvg_mean_last3)
             stomach_expansion_rate = int(stomachDiffAvg_mean_first3 - stomachDiffAvg_mean_last3)
 
 
-            diff_maxpoint_contour_max = int(np.max(self.diff_maxpoint_contour_array[-4:]))
-            diff_maxpoint_contour_min = int(np.min(self.diff_maxpoint_contour_array[:4]))
+            diff_maxpoint_contour_max = int(np.max(self.diff_maxpoint_contour_array[-10:]))
+            diff_maxpoint_contour_min = int(np.min(self.diff_maxpoint_contour_array[-20:-10]))
 
 
             '''
@@ -217,29 +218,33 @@ class VideoCamera(object):
                     print("holding")
             '''
 
-            if (chest_expansion_rate > 0) or (stomach_expansion_rate > 0):
+            if (chest_expansion_rate > 0) and (stomach_expansion_rate > 0):
                 if (chest_expansion_rate - stomach_expansion_rate) > 0:
-                    self.state = "lung_exhale"
-                    print("lung_exhale")
+                    self.state_array.append("lung_exhale")
+                    #print("lung_exhale")
                 else:
-                    self.state = "belly_exhale"
-                    print("belly_exhale")
-            elif (chest_expansion_rate < 0) or (stomach_expansion_rate < 0):
+                    self.state_array.append("belly_exhale")
+                    #print("belly_exhale")
+            elif (chest_expansion_rate < 0) and (stomach_expansion_rate < 0):
                 if (chest_expansion_rate - stomach_expansion_rate) < 0:
-                    self.state = "lung_inhale"
-                    print("lung_inhale")
+                    self.state_array.append("lung_inhale")
+                    #print("lung_inhale")
                 else:
-                    self.state = "belly_inhale"
-                    print("belly_inhale")
+                    self.state_array.append("belly_inhale")
+                    #print("belly_inhale")
+                '''
             elif (chest_expansion_rate > 0) or (stomach_expansion_rate < 0):
-                    self.state = "lung_exhale"
-                    print("lung_exhale")
+                    self.state_array.append("lung_exhale")
             elif (chest_expansion_rate < 0) or (stomach_expansion_rate > 0):
-                    self.state = "lung_inhale"
-                    print("lung_inhale")
+                    self.state_array.append("lung_inhale")
+                '''
             else:
-                self.state = "holding"
-                print("holding")
+                self.state_array.append("holding")
+                #print("holding")
+
+            if len(self.state_array) > 80:
+                self.state = max(set(self.state_array[-5:]), key = self.state_array.count)
+                print (self.state)
 
 
         # close video with 'q' key
