@@ -40,11 +40,11 @@ def video_feed():
 
 @app.route('/calculations')
 def getCalculations():
-	return {"calculations": cam.state}, 400
+	return {"calculations": cam.state}, 200
 
 @app.route('/success')
 def getSuccess():
-	return {"success": cam.contour_found}, 400
+	return {"success": cam.contour_found}, 200
 
 if __name__ == '__main__':
     app.run(host='localhost', debug=True)

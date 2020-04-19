@@ -23,10 +23,10 @@ export class VideoService {
   }
 
   public getStart(): any {
-    return this.http.get(this.baseUrl + 'calculations').pipe(map(response => response));
+    return this.http.get(this.baseUrl + 'success').pipe(map(response => response));
   }
 
-  public getSuccess(): any {
-    return this.http.get(this.baseUrl + 'success').pipe(map(response => response));
+  public getCalculations(): any {
+    return this.http.get(this.baseUrl + 'calculations').pipe(map(response => response));
   }
 }
