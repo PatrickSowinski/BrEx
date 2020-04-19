@@ -102,8 +102,8 @@ class VideoCamera(object):
         imageHeight, imageWidth = frame.shape[:2]
         imageCenterY = int(imageHeight / 2)
 
-        colormode = "AUTO"
-        #colormode = "RED"
+        # colormode = "AUTO"
+        colormode = "RED"
         # colormode = "GRAY"
         thresh = frame
 

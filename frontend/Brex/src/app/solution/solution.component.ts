@@ -9,6 +9,7 @@ import {VideoService} from '../services/video.service';
 export class SolutionComponent implements OnInit, AfterViewInit {
 
   baseUrl = 'http://localhost:5000/video_feed'
+  plotUrl = 'http://localhost:5000/plot'
   public cameraAllowed = false;
 
   public earlyInstructions = [
@@ -43,6 +44,9 @@ export class SolutionComponent implements OnInit, AfterViewInit {
   public resultCalc: boolean;
   public resultFound = false;
   public instructionsFinished = false;
+
+  // plot
+  public displayPlot = false;
 
   constructor(private videoService: VideoService) { }
 
@@ -127,8 +131,14 @@ export class SolutionComponent implements OnInit, AfterViewInit {
       const start = data;
       if (start.success) {
         this.enableStart = true;
+      }else {
+        this.getSuccess();
       }
     });
+  }
+
+  onResultsClick() {
+    this.displayPlot = true;
   }
 
 }

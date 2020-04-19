@@ -29,4 +29,8 @@ export class VideoService {
   public getCalculations(): any {
     return this.http.get(this.baseUrl + 'calculations').pipe(map(response => response));
   }
+
+  public getPlot(): any {
+    return this.http.get(this.baseUrl + 'plot');
+  }
 }

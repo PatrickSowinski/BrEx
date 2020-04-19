@@ -21,11 +21,14 @@
                 <div>
                     <button *ngIf="displayNextButton" class="btn btn-primary" (click)="nextClick()">Next</button>
                     <button *ngIf="displayStartButton" class="btn btn-primary" [disabled]="!enableStart" (click)="startExercise()">Start</button>
-                    <button *ngIf="displayResultButton" class="btn btn-primary">Results</button>
+                    <button *ngIf="displayResultButton" class="btn btn-primary" (click)="onResultsClick()">Results</button>
                     <h1 id="countdown"></h1>
                 </div>
 
             </div>
+        </div>
+        <div *ngIf="displayPlot">
+            <img id="bg" src="{{ plotUrl }}" height="600">
         </div>
 
     </div>

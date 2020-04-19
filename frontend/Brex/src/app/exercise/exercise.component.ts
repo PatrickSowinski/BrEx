@@ -10,6 +10,7 @@ import { VideoService } from '../services/video.service';
 export class ExerciseComponent implements OnInit, AfterViewInit {
 
   baseUrl = 'http://localhost:5000/demo_mode'
+  plotUrl = 'http://localhost:5000/plot'
   public cameraAllowed = false;
 
   public earlyInstructions = [
@@ -27,7 +28,7 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
     { value: 'Exhale', action: 'lung_exhale' },
     { value: 'Inhale from your lung and hold your breath for 5 seconds', action: 'lung_inhale'},
     { value: 'Exhale', action: 'lung_exhale' },
-    // 'Inhale and hold your breath for 5 seconds',
+    // // 'Inhale and hold your breath for 5 seconds',
     // 'Exhale',
   ];
 
@@ -44,6 +45,9 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
   public resultCalc: boolean;
   public resultFound = false;
   public instructionsFinished = false;
+
+  // plot
+  public displayPlot = false;
 
   constructor(private videoService: VideoService) { }
 
@@ -128,8 +132,14 @@ export class ExerciseComponent implements OnInit, AfterViewInit {
       const start = data;
       if (start.success) {
         this.enableStart = true;
+      } else {
+        this.getSuccess();
       }
     });
+  }
+
+  onResultsClick() {
+    this.displayPlot = true;
   }
 
 }
